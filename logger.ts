@@ -5,8 +5,20 @@ import express from 'express';
 
 const context = new AsyncLocalStorage<Map<string, any>>();
 
+const gcpLoggingOptions: pino.LoggerOptions = {
+  base: undefined,
+  messageKey: 'message',
+  timestamp: pino.stdTimeFunctions.isoTime,
+  formatters: {
+    level(label) {
+      return { severity: label.toUpperCase() };
+    },
+  },
+};
+
 const _logger = pino({
   level: process.env.LOG_LEVEL || 'info',
+  ...gcpLoggingOptions,
 });
 
 export const logger = new Proxy(_logger, {
@@ -32,10 +44,10 @@ export const loggerMiddleware: express.RequestHandler = (_req, _res, next) => {
     const res = pino.stdSerializers.res(_res);
     const responseTime = Date.now() - startTime;
     const statusCode = res.statusCode;
-    if (statusCode >= 500) {
-      const _err = new Error(`Request failed with status code ${statusCode}`);
-      const err = pino.stdSerializers.err(_err);
-      child.error({ req, res, err, responseTime }, 'Request failed');
+    if (statusCode >= 400 && statusCode < 500) {
+      child.warn({ req, res, responseTime }, 'Request failed');
+    } else if (statusCode >= 500) {
+      child.error({ req, res, responseTime }, 'Request failed');
     } else {
       child.info({ req, res, responseTime }, 'Request completed');
     }

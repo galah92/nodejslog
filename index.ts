@@ -17,6 +17,7 @@ app.get("/users/:id", (req, res) => {
   const user = getUser(id);
   if (!user) {
     res.sendStatus(404);
+    return;
   }
   logger.info({ user }, `Found user with id ${id}`);
   res.send(user);
