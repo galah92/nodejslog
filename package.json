@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "tsc --build tsconfig.json",
+    "start": "node index.js",
     "serve": "tsx watch --clear-screen=false index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
