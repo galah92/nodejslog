@@ -17,10 +17,10 @@ export const logger = new Proxy(_logger, {
 });
 
 export const loggerMiddleware: express.RequestHandler = (_req, _res, next) => {
-  const reqId = _req.headers['x-request-id'] ?? uuid();
-  _res.setHeader('X-Request-Id', reqId);
+  const id = _req.headers['x-request-id'] ?? uuid();
+  _res.setHeader('X-Request-Id', id);
 
-  const child = _logger.child({ reqId });
+  const child = _logger.child({ id });
   const store = new Map();
   store.set('logger', child);
 
@@ -30,14 +30,14 @@ export const loggerMiddleware: express.RequestHandler = (_req, _res, next) => {
   const startTime = Date.now();
   _res.on('close', () => {
     const res = pino.stdSerializers.res(_res);
-    const reqDuration = Date.now() - startTime;
+    const responseTime = Date.now() - startTime;
     const statusCode = res.statusCode;
     if (statusCode >= 500) {
       const _err = new Error(`Request failed with status code ${statusCode}`);
       const err = pino.stdSerializers.err(_err);
-      child.error({ req, res, err, reqDuration }, 'Request failed');
+      child.error({ req, res, err, responseTime }, 'Request failed');
     } else {
-      child.info({ req, res, reqDuration }, 'Request completed');
+      child.info({ req, res, responseTime }, 'Request completed');
     }
   });
 
